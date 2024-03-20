@@ -1,15 +1,19 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 #define MAXARG 100
 #define MAXLINE 200
 #define FILENAME "../cal.txt"
+#define TEMPFILE "../temp.txt"
 
 void getLine();
 void getArgs();
 int matches(char s1[], char s2[]);
 void pushToFile(char s[]);
+void removeLine(int lineNum);
 void readFromFile();
+int stringToInt(char s[]);
 
 char line[MAXLINE];
 char arg1[MAXARG];
@@ -23,10 +27,18 @@ int main() {
             if (matches(arg1, "add")) {
                 pushToFile(arg2);
                 printf("Added event: %s\n", arg2);
+            } else if (matches(arg1, "rm")) {
+                int lineNum = stringToInt(arg2);
+                if (lineNum > 0)
+                    removeLine(lineNum);
+                else
+                    printf("Must input number 1 or greater after \'rm\' command!\n");
             }
         } else if (matches(arg1, "read")) {
             readFromFile();
-        } else if (matches(arg1, "end"))
+        } else if (matches(arg1, "help")) {
+            printf("read: view current calendar events\nadd 'event info': Add 'event info' to your calendar\nrm 'line number': remove 'line number' from calendar\nend: exit the program\n");
+        } else if (matches(arg1, "end") || matches(arg1, "exit"))
             ;
         else {
             printf("Not enough arguments!\n");
@@ -39,8 +51,6 @@ int main() {
 void pushToFile(char s[]) {
     FILE *file = fopen(FILENAME, "a+");
 
-    fseek(file, 0, SEEK_SET);
-
     char c = getc(file);
     if (c != EOF) {
         ungetc(c, file);
@@ -50,15 +60,71 @@ void pushToFile(char s[]) {
 
     for (int i = 0; i < strlen(s); i++)
         putc(s[i], file);
+    putc('\n', file);
     fclose(file);
+}
+
+int stringToInt(char s[]) {
+    int i;
+    int pos = 1;
+    int asInt = 0;
+    for (i = 0; i < strlen(s); i++) {
+        if (isblank(s[i]))
+            ;
+        else if (s[i] >= '0' && s[i] <= '9')
+            asInt += pos++ * s[i] - '0';
+        else return -1;
+    }
+
+    return asInt;
+}
+
+void removeLine(int targetLine) {
+    FILE *file = fopen(FILENAME, "r");
+    FILE *tempFile = fopen(TEMPFILE, "w");
+
+    int currentLine = 1;
+    char c;
+    char removed[MAXARG];
+    int remP = 0;
+
+    while ((c = getc(file)) != EOF) {
+        if (currentLine == targetLine) {
+            removed[remP++] = c;
+        } else {
+            putc(c, tempFile);
+        }
+        if (c == '\n') {
+            currentLine++;
+        }
+    }
+
+    removed[remP] = '\0';
+    printf("Removed line: %s\n", removed);
+
+    fclose(file);
+    fclose(tempFile);
+    remove(FILENAME);
+    rename(TEMPFILE, FILENAME);
 }
 
 void readFromFile() {
     FILE *file = fopen(FILENAME, "r");
-    char c;
+
     int itemNum = 1;
-    printf("%d) ", itemNum++);
+    char c = getc(file);
+    if (c != EOF) {
+        ungetc(c, file);
+        printf("%d) ", itemNum++);
+    } else {
+        printf("No events here yet!");
+    }
+
+    char temp;
     while ((c = getc(file)) != EOF) {
+        if ((temp = getc(file)) == EOF)
+            break;
+        ungetc(temp, file);
         putchar(c);
         if (c == '\n')
             printf("%d) ", itemNum++);

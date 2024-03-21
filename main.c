@@ -12,12 +12,12 @@
 void readFromFile();
 void pushToFile(char s[]);
 void clearList();
+void removeLine(int lineNum);
 
 // util
 void getArgs();
 void getLine();
 int matches(char s1[], char s2[]);
-void removeLine(int lineNum);
 int stringToInt(char s[]);
 void setBackup();
 void restoreBackup();
@@ -91,11 +91,11 @@ void restoreBackup() {
         putc(c, mainFile);
     }
 
-    printf("Restoring backup!\n");
-    readFromFile();
-
     fclose(mainFile);
     fclose(backupFile);
+
+    printf("Restored backup:\n");
+    readFromFile();
 }
 
 void pushToFile(char s[]) {

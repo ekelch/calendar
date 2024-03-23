@@ -69,31 +69,25 @@ void clearList() {
     printf("Successfully cleared all events!\n");
 }
 
-void setBackup() {
-    FILE *mainFile = fopen(FILENAME, "r");
-    FILE *backupFile = fopen(BACKUPFILE, "w");
+void copyFile(char fromFileName[], char toFileName[]) {
+    FILE *fromFile = fopen(fromFileName, "r");
+    FILE *toFile = fopen(toFileName, "w");
 
     char c;
-    while ((c = getc(mainFile)) != EOF) {
-        putc(c, backupFile);
+    while ((c = getc(fromFile)) != EOF) {
+        putc(c, toFile);
     }
 
-    fclose(mainFile);
-    fclose(backupFile);
+    fclose(fromFile);
+    fclose(toFile);
+}
+
+void setBackup() {
+    copyFile(FILENAME, BACKUPFILE);
 }
 
 void restoreBackup() {
-    FILE *mainFile = fopen(FILENAME, "w");
-    FILE *backupFile = fopen(BACKUPFILE, "r");
-
-    char c;
-    while ((c = getc(backupFile)) != EOF) {
-        putc(c, mainFile);
-    }
-
-    fclose(mainFile);
-    fclose(backupFile);
-
+    copyFile(BACKUPFILE, FILENAME);
     printf("Restored backup:\n");
     readFromFile();
 }
